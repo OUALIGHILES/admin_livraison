@@ -17,6 +17,7 @@ export function SearchBar<T>({
   className = ''
 }: SearchBarProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredItems, setFilteredItems] = useState<T[]>(items);
 
   const getNestedValue = (obj: any, path: string): any => {
     return path.split('.').reduce((current, key) => {
@@ -27,17 +28,19 @@ export function SearchBar<T>({
   useEffect(() => {
     if (!searchTerm.trim()) {
       onSearch(items);
+      setFilteredItems(items);
       return;
     }
 
-    const filteredItems = items.filter((item) => {
+    const results = items.filter((item) => {
       return searchFields.some((field) => {
         const value = getNestedValue(item, field);
         return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
       });
     });
 
-    onSearch(filteredItems);
+    onSearch(results);
+    setFilteredItems(results);
   }, [searchTerm, items, searchFields, onSearch]);
 
   return (
@@ -52,6 +55,11 @@ export function SearchBar<T>({
         placeholder={placeholder}
         className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
+      {searchTerm && filteredItems.length === 0 && items.length > 0 && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-red-500">
+          Not found
+        </div>
+      )}
     </div>
   );
 }

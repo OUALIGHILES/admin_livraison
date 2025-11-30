@@ -210,45 +210,59 @@ export function Products() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {(filteredProducts.length > 0 ? filteredProducts : products).map((product) => (
-              <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4">
-                  {product.photo_url ? (
-                    <img
-                      src={product.photo_url}
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded border border-slate-200"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 flex items-center justify-center bg-slate-100 rounded border border-slate-200">
-                      <span className="text-xs text-slate-500">No Image</span>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">{product.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">${product.admin_price.toFixed(2)}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {product.profit_amount ? `$${product.profit_amount.toFixed(2)}` : '-'}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600">
-                  {new Date(product.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4">
+                    {product.photo_url ? (
+                      <img
+                        src={product.photo_url}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded border border-slate-200"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 flex items-center justify-center bg-slate-100 rounded border border-slate-200">
+                        <span className="text-xs text-slate-500">No Image</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">{product.name}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">${product.admin_price.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {product.profit_amount ? `$${product.profit_amount.toFixed(2)}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {new Date(product.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleEdit(product)}
+                      className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : filteredProducts.length === 0 && products.length > 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  Not found
                 </td>
               </tr>
-            ))}
+            ) : (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  No products found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -318,7 +332,7 @@ export function Products() {
                 </label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".png,.jpg,.jpeg"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setImageFile(e.target.files[0]);

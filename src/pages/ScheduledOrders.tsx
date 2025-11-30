@@ -339,69 +339,83 @@ export function ScheduledOrders() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {(filteredOrders.length > 0 ? filteredOrders : orders).map((order) => (
-              <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 text-sm text-slate-900 font-mono">
-                  {order.id.slice(0, 8)}...
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {order.client?.full_name || 'N/A'}
-                  {order.client?.phone_number && (
-                    <div className="mt-1">
-                      <a
-                        href={`https://wa.me/${order.client.phone_number.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
-                      >
-                        <span className="text-[14px]">💬</span>
-                        WhatsApp
-                      </a>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {order.driver?.full_name || 'N/A'}
-                  {order.driver?.phone_number && (
-                    <div className="mt-1">
-                      <a
-                        href={`https://wa.me/${order.driver.phone_number.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
-                      >
-                        <span className="text-[14px]">💬</span>
-                        WhatsApp
-                      </a>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {formatDateTime(order.scheduled_datetime)}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right flex gap-2">
-                  <button
-                    onClick={() => handleViewOrder(order)}
-                    className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(order.id)}
-                    className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-900 font-mono">
+                    {order.id.slice(0, 8)}...
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {order.client?.full_name || 'N/A'}
+                    {order.client?.phone_number && (
+                      <div className="mt-1">
+                        <a
+                          href={`https://wa.me/${order.client.phone_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                        >
+                          <span className="text-[14px]">💬</span>
+                          WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {order.driver?.full_name || 'N/A'}
+                    {order.driver?.phone_number && (
+                      <div className="mt-1">
+                        <a
+                          href={`https://wa.me/${order.driver.phone_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                        >
+                          <span className="text-[14px]">💬</span>
+                          WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {formatDateTime(order.scheduled_datetime)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right flex gap-2">
+                    <button
+                      onClick={() => handleViewOrder(order)}
+                      className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(order.id)}
+                      className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : filteredOrders.length === 0 && orders.length > 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  Not found
                 </td>
               </tr>
-            ))}
+            ) : (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  No scheduled orders found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -362,77 +362,91 @@ export function Orders() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {(filteredOrders.length > 0 ? filteredOrders : orders).map((order) => (
-              <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 text-sm text-slate-900 font-mono">
-                  {order.id.slice(0, 8)}...
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {order.clients?.full_name || 'N/A'}
-                  {order.clients?.phone_number && (
-                    <div className="mt-1">
-                      <a
-                        href={`https://wa.me/${order.clients.phone_number.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
-                      >
-                        <span className="text-[14px]">💬</span>
-                        WhatsApp
-                      </a>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">
-                  {order.drivers?.full_name || 'N/A'}
-                  {order.drivers?.phone_number && (
-                    <div className="mt-1">
-                      <a
-                        href={`https://wa.me/${order.drivers.phone_number.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
-                      >
-                        <span className="text-[14px]">💬</span>
-                        WhatsApp
-                      </a>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
-                <td className="px-6 py-4">
-                  <select
-                    value={order.status}
-                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} border-0 cursor-pointer`}
-                  >
-                    <option value="new">New</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleViewOrder(order)}
-                    className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors mr-2"
-                  >
-                    <Eye size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(order.id)}
-                    className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18"/>
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                    </svg>
-                  </button>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-900 font-mono">
+                    {order.id.slice(0, 8)}...
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {order.clients?.full_name || 'N/A'}
+                    {order.clients?.phone_number && (
+                      <div className="mt-1">
+                        <a
+                          href={`https://wa.me/${order.clients.phone_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                        >
+                          <span className="text-[14px]">💬</span>
+                          WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">
+                    {order.drivers?.full_name || 'N/A'}
+                    {order.drivers?.phone_number && (
+                      <div className="mt-1">
+                        <a
+                          href={`https://wa.me/${order.drivers.phone_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                        >
+                          <span className="text-[14px]">💬</span>
+                          WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={order.status}
+                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} border-0 cursor-pointer`}
+                    >
+                      <option value="new">New</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleViewOrder(order)}
+                      className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors mr-2"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(order.id)}
+                      className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : filteredOrders.length === 0 && orders.length > 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  Not found
                 </td>
               </tr>
-            ))}
+            ) : (
+              <tr>
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  No orders found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

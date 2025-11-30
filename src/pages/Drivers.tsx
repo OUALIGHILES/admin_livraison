@@ -243,57 +243,67 @@ export function Drivers() {
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-          {(filteredDrivers.length > 0 ? filteredDrivers : drivers).map((driver) => (
-            <div key={driver.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-48 bg-slate-100 flex items-center justify-center">
-                {driver.car_image_url ? (
-                  <img
-                    src={driver.car_image_url}
-                    alt={driver.car_type}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Car size={64} className="text-slate-400" />
-                )}
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-slate-900">{driver.full_name}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(driver.status)}`}>
-                    {driver.status.replace('_', ' ')}
-                  </span>
+          {filteredDrivers.length > 0 ? (
+            filteredDrivers.map((driver) => (
+              <div key={driver.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div className="h-48 bg-slate-100 flex items-center justify-center">
+                  {driver.car_image_url ? (
+                    <img
+                      src={driver.car_image_url}
+                      alt={driver.car_type}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Car size={64} className="text-slate-400" />
+                  )}
                 </div>
-                <p className="text-sm text-slate-600 mb-1">{driver.car_type}</p>
-                <p className="text-sm text-slate-600 mb-1">{driver.location}</p>
-                <p className="text-sm text-slate-600 mb-4">{driver.phone_number}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(driver)}
-                    className="flex-1 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <Pencil size={16} />
-                    Edit
-                  </button>
-                  <a
-                    href={`https://wa.me/${driver.phone_number.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <span className="text-[16px]">💬</span>
-                    WhatsApp
-                  </a>
-                  <button
-                    onClick={() => handleDelete(driver.id)}
-                    className="flex-1 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </button>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-semibold text-slate-900">{driver.full_name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(driver.status)}`}>
+                      {driver.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-1">{driver.car_type}</p>
+                  <p className="text-sm text-slate-600 mb-1">{driver.location}</p>
+                  <p className="text-sm text-slate-600 mb-4">{driver.phone_number}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(driver)}
+                      className="flex-1 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Pencil size={16} />
+                      Edit
+                    </button>
+                    <a
+                      href={`https://wa.me/${driver.phone_number.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <span className="text-[16px]">💬</span>
+                      WhatsApp
+                    </a>
+                    <button
+                      onClick={() => handleDelete(driver.id)}
+                      className="flex-1 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : filteredDrivers.length === 0 && drivers.length > 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-slate-500 text-lg">Not found</p>
             </div>
-          ))}
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-slate-500 text-lg">No drivers found</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -337,7 +347,7 @@ export function Drivers() {
                 </label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".png,.jpg,.jpeg"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setCarImageFile(e.target.files[0]);

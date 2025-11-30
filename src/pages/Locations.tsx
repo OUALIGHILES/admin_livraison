@@ -150,29 +150,43 @@ export function Locations() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {(filteredLocations.length > 0 ? filteredLocations : locations).map((location) => (
-              <tr key={location.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 text-sm text-slate-900">{location.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">{location.address || '-'}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">
-                  {new Date(location.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleEdit(location)}
-                    className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(location.id)}
-                    className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+            {filteredLocations.length > 0 ? (
+              filteredLocations.map((location) => (
+                <tr key={location.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-900">{location.name}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">{location.address || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {new Date(location.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleEdit(location)}
+                      className="text-blue-600 hover:text-blue-800 p-2 inline-flex transition-colors"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(location.id)}
+                      className="text-red-600 hover:text-red-800 p-2 inline-flex transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : filteredLocations.length === 0 && locations.length > 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                  Not found
                 </td>
               </tr>
-            ))}
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                  No locations found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
