@@ -36,37 +36,49 @@ export function Payments() {
     try {
       console.log('Loading payment data');
 
-      // Load driver payments and drivers separately to avoid join issues
+      // Load all drivers first to ensure all are represented in the payment system
+      const driversRes = await supabase
+        .from('drivers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (driversRes.error) throw driversRes.error;
+      const allDrivers = driversRes.data || [];
+
+      // Then get existing payment records
       const paymentsRes = await supabase
         .from('driver_payments')
-        .select('*')
-        .order('updated_at', { ascending: false });
+        .select('*');
 
-      let paymentsWithDrivers = [];
-      if (paymentsRes.error) {
-        console.error('Error loading driver payments:', paymentsRes.error);
-      } else {
-        // Fetch driver details separately
-        if (paymentsRes.data && paymentsRes.data.length > 0) {
-          const driverIds = paymentsRes.data.map(p => p.driver_id);
-          const { data: driversData, error: driversError } = await supabase
-            .from('drivers')
-            .select('*')
-            .in('id', driverIds);
+      if (paymentsRes.error) throw paymentsRes.error;
+      const existingPayments = paymentsRes.data || [];
 
-          if (driversError) {
-            console.error('Error loading drivers for payments:', driversError);
-          } else {
-            // Combine payments with driver information
-            paymentsWithDrivers = paymentsRes.data.map(payment => {
-              const driver = driversData.find(d => d.id === payment.driver_id);
-              return { ...payment, driver };
-            });
-          }
+      // Combine all drivers with their payment records, creating default records for drivers without payments
+      let paymentsWithDrivers = allDrivers.map(driver => {
+        const existingPayment = existingPayments.find(payment => payment.driver_id === driver.id);
+
+        if (existingPayment) {
+          return { ...existingPayment, driver };
         } else {
-          paymentsWithDrivers = paymentsRes.data || [];
+          // If no payment record exists, create a default one
+          return {
+            id: null, // Will be null until it's created in the database
+            driver_id: driver.id,
+            pending_amount: 0,
+            paid_amount: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            driver
+          };
         }
-      }
+      });
+
+      // Sort by most recently updated/added
+      paymentsWithDrivers.sort((a, b) => {
+        const aDate = a.updated_at || a.created_at;
+        const bDate = b.updated_at || b.created_at;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
 
       setPayments(paymentsWithDrivers);
 
@@ -205,20 +217,20 @@ export function Payments() {
     if (!selectedDriver) return;
 
     const amount = parseFloat(withdrawalAmount);
-    if (amount <= 0 || amount > selectedDriver.pending_amount) {
-      alert('Invalid withdrawal amount. Cannot withdraw more than pending amount.');
+    if (amount <= 0 || amount > selectedDriver.paid_amount) {
+      alert('Invalid withdrawal amount. Cannot withdraw more than paid amount.');
       return;
     }
 
     try {
       console.log('Processing withdrawal');
 
-      // Update the driver payment by reducing the pending amount and increasing the paid amount
-      const { error: updateError } = await supabaseService
+      // Update the driver payment by reducing the paid amount and keeping pending unchanged
+      // A withdrawal means money is taken from the paid funds, so paid decreases
+      const { error: updateError } = await supabase
         .from('driver_payments')
         .update({
-          pending_amount: selectedDriver.pending_amount - amount,
-          paid_amount: selectedDriver.paid_amount + amount,
+          paid_amount: selectedDriver.paid_amount - amount,
         })
         .eq('id', selectedDriver.id);
 
@@ -228,7 +240,7 @@ export function Payments() {
       }
 
       // Record the withdrawal in the withdrawals table
-      const { error: withdrawalError } = await supabaseService.from('driver_withdrawals').insert({
+      const { error: withdrawalError } = await supabase.from('driver_withdrawals').insert({
         driver_id: selectedDriver.driver_id,
         amount: amount,
         withdrawal_date: new Date().toISOString(),
@@ -238,6 +250,20 @@ export function Payments() {
       if (withdrawalError) {
         console.error('Withdrawal recording error:', withdrawalError);
         throw withdrawalError;
+      }
+
+      // Also record the withdrawal in the payment transactions table for history
+      const { error: transactionError } = await supabase.from('payment_transactions').insert({
+        driver_id: selectedDriver.driver_id,
+        amount: amount,
+        payment_date: new Date().toISOString(),
+        notes: `WITHDRAWAL: ${withdrawalNotes || 'Manual withdrawal'}`,
+      });
+
+      if (transactionError) {
+        console.error('Transaction recording error:', transactionError);
+        // Still consider the operation successful even if transaction recording fails
+        // as the main withdrawal was recorded in the driver_withdrawals table
       }
 
       setShowWithdrawalModal(false);
@@ -253,7 +279,7 @@ export function Payments() {
 
   const openWithdrawalModal = (payment: PaymentWithDriver) => {
     setSelectedDriver(payment);
-    setWithdrawalAmount(''); // Start with empty amount for withdrawal - admin will enter the withdrawal amount
+    // Set the withdrawal amount to the current pending amount as a default, but keep it empty for user input
     setWithdrawalNotes('');
     setShowWithdrawalModal(true);
   };
@@ -316,6 +342,7 @@ export function Payments() {
                 </div>
 
                 <div className="space-y-2 mt-4">
+                  {/* Show Pay and Withdraw buttons only when there is a pending amount to pay or withdraw */}
                   {payment.pending_amount !== null && payment.pending_amount > 0 && (
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -333,7 +360,7 @@ export function Payments() {
                     </div>
                   )}
 
-                  {/* Show total withdrawal button */}
+                  {/* Show action buttons */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
@@ -507,23 +534,23 @@ export function Payments() {
             <div className="mb-6 p-4 bg-slate-50 rounded-lg">
               <p className="text-sm text-slate-600">Driver</p>
               <p className="text-lg font-semibold text-slate-900">{selectedDriver.driver?.full_name}</p>
-              <p className="text-sm text-slate-600 mt-2">Current Pending Amount</p>
-              <p className="text-2xl font-bold text-orange-600">
-                ${selectedDriver.pending_amount !== null ? selectedDriver.pending_amount.toFixed(2) : '0.00'}
+              <p className="text-sm text-slate-600 mt-2">Current Paid Amount</p>
+              <p className="text-2xl font-bold text-green-600">
+                ${selectedDriver.paid_amount !== null ? selectedDriver.paid_amount.toFixed(2) : '0.00'}
               </p>
             </div>
 
             <form onSubmit={handleRecordWithdrawal} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Withdrawal Amount ($)
+                  Payment Amount to Driver ($)
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   value={withdrawalAmount}
                   onChange={(e) => setWithdrawalAmount(e.target.value)}
-                  max={selectedDriver.pending_amount || 0}
+                  max={selectedDriver.paid_amount || 0}
                   required
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -556,9 +583,9 @@ export function Payments() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.pending_amount || 0)}
+                  disabled={!withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.paid_amount || 0)}
                   className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                    !withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.pending_amount || 0)
+                    !withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.paid_amount || 0)
                       ? 'bg-red-400 cursor-not-allowed'
                       : 'bg-red-600 hover:bg-red-700 text-white'
                   }`}

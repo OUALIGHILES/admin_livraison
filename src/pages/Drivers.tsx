@@ -120,6 +120,20 @@ export function Drivers() {
 
         if (error) throw error;
         driverId = data.id;
+
+        // Create a payment record for the new driver
+        const { error: paymentError } = await supabaseService
+          .from('driver_payments')
+          .insert({
+            driver_id: driverId,
+            pending_amount: 0,
+            paid_amount: 0,
+          });
+
+        if (paymentError) {
+          console.error('Error creating driver payment record:', paymentError);
+          // Still continue with the process even if payment record creation fails
+        }
       }
 
       const priceInserts = Object.entries(productPrices)
