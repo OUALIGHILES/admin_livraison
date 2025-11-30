@@ -11,16 +11,19 @@ DECLARE
   new_order_id UUID;
   current_time_saudi TIMESTAMP WITH TIME ZONE;
 BEGIN
-  -- Get the current time in UTC and then convert to Saudi Arabia timezone (UTC+3)
-  SELECT NOW() AT TIME ZONE 'UTC' + INTERVAL '3 hours' INTO current_time_saudi;
+  -- Get the current time in UTC and convert to Saudi Arabia timezone (UTC+3)
+  -- The NOW() function in PostgreSQL returns time in UTC
+  -- We need to add 3 hours to get Saudi time
+  SELECT NOW() + INTERVAL '3 hours' INTO current_time_saudi;
 
   -- Log the current Saudi time for debugging
   RAISE NOTICE 'Current Saudi Time: %', current_time_saudi;
 
-  -- Loop through all scheduled orders that have reached their scheduled time
+  -- Loop through all scheduled orders that have reached their scheduled time in Saudi Arabia
   FOR rec IN
     SELECT * FROM scheduled_orders
     WHERE status = 'scheduled'
+    -- Compare the scheduled_datetime (stored as entered by user in Saudi time) with current Saudi time
     AND scheduled_datetime <= current_time_saudi
   LOOP
     -- Create the actual order in the orders table

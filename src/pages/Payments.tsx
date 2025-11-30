@@ -556,7 +556,12 @@ export function Payments() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  disabled={!withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.pending_amount || 0)}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    !withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (selectedDriver.pending_amount || 0)
+                      ? 'bg-red-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
                 >
                   Record Withdrawal
                 </button>

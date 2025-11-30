@@ -130,18 +130,15 @@ export function ScheduledOrders() {
         };
       });
 
-      // Convert the scheduled datetime to Saudi Arabia timezone (UTC+3) using Luxon
-      const scheduledTime = DateTime.fromISO(formData.scheduled_datetime, { zone: 'local' });
-      const scheduledTimeKSA = scheduledTime.setZone('Asia/Riyadh');
-
-      // Create the scheduled order
+      // Store the scheduled datetime - it will be converted to UTC automatically by Supabase
+      // The user inputs the time in their local timezone, which is adjusted properly
       const { data: order, error: orderError } = await supabaseService
         .from('scheduled_orders')
         .insert({
           client_id: formData.client_id,
           driver_id: formData.driver_id,
           location: formData.location,
-          scheduled_datetime: scheduledTimeKSA.toISO(),
+          scheduled_datetime: formData.scheduled_datetime,
           total_amount: totalAmount,
           driver_amount: driverAmount,
           status: 'scheduled',

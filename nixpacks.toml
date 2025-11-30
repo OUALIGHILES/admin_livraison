@@ -1,0 +1,29 @@
+# Nixpacks configuration for Next.js project
+# This configures how the Next.js app is built and run in containers
+
+[variables]
+  # Node.js version
+  NODE_VERSION = "20.10.0"
+ 
+[phases.setup]
+  # Install Node.js and pnpm
+  nixPkgs = ["nodejs", "nodePackages.pnpm", "pnpm"]
+
+[phases.install]
+  # Commands to install dependencies
+  cmds = [
+    "pnpm install --no-frozen-lockfile"
+  ]
+
+[phases.build]
+  # Commands to build the Next.js app
+  cmds = ["pnpm run build"]
+
+[phases.start]
+  # Commands to start the Next.js app
+  cmd = "pnpm start"
+
+[config]
+  # Next.js specific configurations
+  NODE_ENV = "production"
+  NEXT_TELEMETRY_DISABLED = "1"
