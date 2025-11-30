@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { uploadImageToStorage } from '../lib/storage';
 import { Client, Location } from '../types/database';
-import { Plus, Pencil, Trash2, Home } from 'lucide-react';
+import { Plus, Pencil, Trash2, Home, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 export function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -142,52 +144,63 @@ export function Clients() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {clients.map((client) => (
-          <div key={client.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-            <div className="h-48 bg-slate-100 flex items-center justify-center">
-              {client.house_image_url ? (
-                <img
-                  src={client.house_image_url}
-                  alt="House"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Home size={64} className="text-slate-400" />
-              )}
-            </div>
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">{client.full_name}</h3>
-              <p className="text-sm text-slate-600 mb-1">{client.location}</p>
-              <p className="text-sm text-slate-600 mb-4">{client.phone_number}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(client)}
-                  className="flex-1 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Pencil size={16} />
-                  Edit
-                </button>
-                <a
-                  href={`https://wa.me/${client.phone_number.replace(/[^0-9]/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  <span className="text-[16px]">💬</span>
-                  WhatsApp
-                </a>
-                <button
-                  onClick={() => handleDelete(client.id)}
-                  className="flex-1 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<Client>
+            items={clients}
+            placeholder="Search clients by name, location, or phone number..."
+            searchFields={['full_name', 'location', 'phone_number']}
+            onSearch={setFilteredClients}
+            className="max-w-md"
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+          {(filteredClients.length > 0 ? filteredClients : clients).map((client) => (
+            <div key={client.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="h-48 bg-slate-100 flex items-center justify-center">
+                {client.house_image_url ? (
+                  <img
+                    src={client.house_image_url}
+                    alt="House"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Home size={64} className="text-slate-400" />
+                )}
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">{client.full_name}</h3>
+                <p className="text-sm text-slate-600 mb-1">{client.location}</p>
+                <p className="text-sm text-slate-600 mb-4">{client.phone_number}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(client)}
+                    className="flex-1 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Pencil size={16} />
+                    Edit
+                  </button>
+                  <a
+                    href={`https://wa.me/${client.phone_number.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <span className="text-[16px]">💬</span>
+                    WhatsApp
+                  </a>
+                  <button
+                    onClick={() => handleDelete(client.id)}
+                    className="flex-1 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {showModal && (

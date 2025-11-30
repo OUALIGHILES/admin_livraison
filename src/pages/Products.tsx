@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { uploadImageToStorage, deleteImageFromStorage } from '../lib/storage';
 import { Product } from '../types/database';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -187,6 +189,15 @@ export function Products() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<Product>
+            items={products}
+            placeholder="Search products by name..."
+            searchFields={['name']}
+            onSearch={setFilteredProducts}
+            className="max-w-md"
+          />
+        </div>
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -199,7 +210,7 @@ export function Products() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {products.map((product) => (
+            {(filteredProducts.length > 0 ? filteredProducts : products).map((product) => (
               <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
                   {product.photo_url ? (

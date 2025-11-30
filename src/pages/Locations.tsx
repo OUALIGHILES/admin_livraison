@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { Location } from '../types/database';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 export function Locations() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
@@ -129,6 +131,15 @@ export function Locations() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<Location>
+            items={locations}
+            placeholder="Search locations by name or address..."
+            searchFields={['name', 'address']}
+            onSearch={setFilteredLocations}
+            className="max-w-md"
+          />
+        </div>
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -139,7 +150,7 @@ export function Locations() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {locations.map((location) => (
+            {(filteredLocations.length > 0 ? filteredLocations : locations).map((location) => (
               <tr key={location.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 text-sm text-slate-900">{location.name}</td>
                 <td className="px-6 py-4 text-sm text-slate-900">{location.address || '-'}</td>
@@ -185,7 +196,7 @@ export function Locations() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Address
@@ -197,7 +208,7 @@ export function Locations() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"

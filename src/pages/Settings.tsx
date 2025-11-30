@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { Admin } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Trash2, Shield, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, Shield, ShieldAlert, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 export function Settings() {
   const { admin } = useAuth();
   const [admins, setAdmins] = useState<Admin[]>([]);
+  const [filteredAdmins, setFilteredAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -112,12 +114,21 @@ export function Settings() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<Admin>
+            items={admins}
+            placeholder="Search admins by name or email..."
+            searchFields={['full_name', 'email']}
+            onSearch={setFilteredAdmins}
+            className="max-w-md"
+          />
+        </div>
         <div className="px-6 py-4 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">Admin Users</h2>
         </div>
         <div className="p-6">
           <div className="space-y-3">
-            {admins.map((adminUser) => (
+            {(filteredAdmins.length > 0 ? filteredAdmins : admins).map((adminUser) => (
               <div
                 key={adminUser.id}
                 className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"

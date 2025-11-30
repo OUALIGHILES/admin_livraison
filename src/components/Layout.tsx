@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -24,6 +24,19 @@ interface LayoutProps {
 export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const { admin, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Update time every second to show real-time clock
+    const timer = setInterval(() => {
+      const now = new Date();
+      // Convert to UTC+3 (add 3 hours)
+      now.setHours(now.getHours() + 3);
+      setCurrentTime(now);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -68,6 +81,19 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           <h1 className="text-2xl font-bold text-slate-900">Admin Panel</h1>
           <p className="text-sm text-slate-600 mt-1">{admin?.full_name}</p>
           <p className="text-xs text-slate-500">{admin?.email}</p>
+          <div className="mt-4 p-3 bg-slate-100 rounded-lg border border-slate-200">
+            <div className="flex items-center justify-center gap-2 text-slate-700">
+              <Clock size={16} />
+              <span className="font-mono font-bold text-sm">
+                {currentTime.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false
+                })}
+              </span>
+            </div>
+          </div>
         </div>
 
         <nav className="p-4">

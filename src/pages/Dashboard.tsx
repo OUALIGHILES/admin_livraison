@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
-import { Package, Users, Car, ShoppingCart, DollarSign, TrendingUp } from 'lucide-react';
+import { Package, Users, Car, ShoppingCart, DollarSign, TrendingUp, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 interface Stats {
   totalProducts: number;

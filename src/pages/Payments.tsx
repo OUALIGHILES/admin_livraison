@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Driver, DriverPayment, PaymentTransaction, DriverWithdrawal } from '../types/database';
-import { DollarSign, Printer, Minus, Plus } from 'lucide-react';
+import { DollarSign, Printer, Minus, Plus, Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 interface PaymentWithDriver extends DriverPayment {
   driver?: Driver;
@@ -17,8 +18,11 @@ interface WithdrawalWithDriver extends DriverWithdrawal {
 
 export function Payments() {
   const [payments, setPayments] = useState<PaymentWithDriver[]>([]);
+  const [filteredPayments, setFilteredPayments] = useState<PaymentWithDriver[]>([]);
   const [transactions, setTransactions] = useState<TransactionWithDriver[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithDriver[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalWithDriver[]>([]);
+  const [filteredWithdrawals, setFilteredWithdrawals] = useState<WithdrawalWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
@@ -27,6 +31,7 @@ export function Payments() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalNotes, setWithdrawalNotes] = useState('');
+  const [adminEmail, setAdminEmail] = useState('hi@gmail.com'); // This would typically come from auth state
 
   useEffect(() => {
     loadData();
@@ -288,12 +293,207 @@ export function Payments() {
     window.print();
   };
 
+  const printTransaction = (transaction: TransactionWithDriver) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Transaction Receipt</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .receipt { max-width: 400px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .info { margin-bottom: 15px; }
+              .info div { margin-bottom: 5px; }
+              .amount { font-size: 24px; font-weight: bold; color: #22c55e; text-align: center; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="receipt">
+              <div class="header">
+                <h2>Transaction Receipt</h2>
+                <hr style="margin: 10px 0;">
+              </div>
+
+              <div class="info">
+                <div><strong>Date:</strong> ${new Date(transaction.payment_date).toLocaleString()}</div>
+                <div><strong>Driver:</strong> ${transaction.driver?.full_name || 'Unknown'}</div>
+                <div><strong>Driver Phone:</strong> ${transaction.driver?.phone_number || 'N/A'}</div>
+              </div>
+
+              <div class="amount">$${transaction.amount !== null ? transaction.amount.toFixed(2) : '0.00'}</div>
+
+              <div class="info">
+                <div><strong>Notes:</strong> ${transaction.notes || '-'}</div>
+                <div><strong>Transaction ID:</strong> ${transaction.id}</div>
+              </div>
+
+              <div class="footer">
+                <p>Generated on ${new Date().toLocaleString()}</p>
+                <p>Payment Management System</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
+  const printWithdrawal = (withdrawal: WithdrawalWithDriver) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Withdrawal Receipt</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .receipt { max-width: 400px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .info { margin-bottom: 15px; }
+              .info div { margin-bottom: 5px; }
+              .amount { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="receipt">
+              <div class="header">
+                <h2>Withdrawal Receipt</h2>
+                <hr style="margin: 10px 0;">
+              </div>
+
+              <div class="info">
+                <div><strong>Date:</strong> ${new Date(withdrawal.withdrawal_date).toLocaleString()}</div>
+                <div><strong>Driver:</strong> ${withdrawal.driver?.full_name || 'Unknown'}</div>
+                <div><strong>Driver Phone:</strong> ${withdrawal.driver?.phone_number || 'N/A'}</div>
+              </div>
+
+              <div class="amount">-$${withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}</div>
+
+              <div class="info">
+                <div><strong>Notes:</strong> ${withdrawal.notes || '-'}</div>
+                <div><strong>Withdrawal ID:</strong> ${withdrawal.id}</div>
+              </div>
+
+              <div class="footer">
+                <p>Generated on ${new Date().toLocaleString()}</p>
+                <p>Payment Management System</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
+  const printDriverCard = (payment: PaymentWithDriver) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Driver Payment Card</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .receipt { max-width: 400px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .info { margin-bottom: 15px; }
+              .info div { margin-bottom: 5px; }
+              .amount { font-size: 24px; font-weight: bold; text-align: center; margin: 10px 0; }
+              .pending { color: #f97316; }
+              .paid { color: #22c55e; }
+              .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="receipt">
+              <div class="header">
+                <h2>Driver Payment Card</h2>
+                <hr style="margin: 10px 0;">
+              </div>
+
+              <div class="info">
+                <div><strong>Driver Name:</strong> ${payment.driver?.full_name || 'Unknown'}</div>
+                <div><strong>Phone Number:</strong> ${payment.driver?.phone_number || 'N/A'}</div>
+              </div>
+
+              <div class="amount pending">
+                <div><strong>Pending Amount:</strong></div>
+                <div>$${payment.pending_amount !== null ? payment.pending_amount.toFixed(2) : '0.00'}</div>
+              </div>
+
+              <div class="amount paid">
+                <div><strong>Paid Amount:</strong></div>
+                <div>$${payment.paid_amount !== null ? payment.paid_amount.toFixed(2) : '0.00'}</div>
+              </div>
+
+              <div class="info">
+                <div><strong>Card ID:</strong> ${payment.id || 'N/A'}</div>
+                <div><strong>Driver ID:</strong> ${payment.driver_id}</div>
+              </div>
+
+              <div class="footer">
+                <p>Generated on ${new Date().toLocaleString()}</p>
+                <p>Payment Management System</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
+      {/* Admin Header */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 bg-slate-800 text-white">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                <span className="font-bold">A</span>
+              </div>
+              <h1 className="text-2xl font-bold">Admin Panel</h1>
+            </div>
+
+            <div className="text-right">
+              <div className="text-slate-300">
+                {adminEmail}
+              </div>
+              <div className="text-slate-300 mt-1">
+                Payments
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-900">Payment Management</h1>
         <button
@@ -379,6 +579,13 @@ export function Payments() {
                       <Minus size={14} />
                       Record Withdrawal
                     </button>
+                    <button
+                      onClick={() => printDriverCard(payment)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-xs flex items-center gap-1 print:hidden"
+                    >
+                      <Printer size={14} />
+                      Print Card
+                    </button>
                   </div>
                 </div>
               </div>
@@ -388,6 +595,15 @@ export function Payments() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<TransactionWithDriver>
+            items={transactions}
+            placeholder="Search payment history by driver name..."
+            searchFields={['driver.full_name', 'notes']}
+            onSearch={setFilteredTransactions}
+            className="max-w-md"
+          />
+        </div>
         <div className="px-6 py-4 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">Payment History</h2>
         </div>
@@ -399,10 +615,11 @@ export function Payments() {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Driver</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Amount</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Notes</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 print:hidden">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {transactions.map((transaction) => (
+              {(filteredTransactions.length > 0 ? filteredTransactions : transactions).map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-sm text-slate-900">
                     {new Date(transaction.payment_date).toLocaleString()}
@@ -416,6 +633,15 @@ export function Payments() {
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {transaction.notes || '-'}
                   </td>
+                  <td className="px-6 py-4 text-sm print:hidden">
+                    <button
+                      onClick={() => printTransaction(transaction)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      <Printer size={16} />
+                      Print
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -425,6 +651,15 @@ export function Payments() {
 
       {/* New section for withdrawal history */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<WithdrawalWithDriver>
+            items={withdrawals}
+            placeholder="Search withdrawal history by driver name..."
+            searchFields={['driver.full_name', 'notes']}
+            onSearch={setFilteredWithdrawals}
+            className="max-w-md"
+          />
+        </div>
         <div className="px-6 py-4 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">Withdrawal History</h2>
         </div>
@@ -436,10 +671,11 @@ export function Payments() {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Driver</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Amount</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Notes</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 print:hidden">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {withdrawals.map((withdrawal) => (
+              {(filteredWithdrawals.length > 0 ? filteredWithdrawals : withdrawals).map((withdrawal) => (
                 <tr key={withdrawal.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-sm text-slate-900">
                     {new Date(withdrawal.withdrawal_date).toLocaleString()}
@@ -452,6 +688,15 @@ export function Payments() {
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {withdrawal.notes || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm print:hidden">
+                    <button
+                      onClick={() => printWithdrawal(withdrawal)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      <Printer size={16} />
+                      Print
+                    </button>
                   </td>
                 </tr>
               ))}

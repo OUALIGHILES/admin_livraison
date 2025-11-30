@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { Client, Driver, Product, ScheduledOrder, ScheduledOrderItem, Location } from '../types/database';
-import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock, Search } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { SearchBar } from '../components/SearchBar';
 
 interface ScheduledOrderWithDetails extends ScheduledOrder {
   client?: Client;
@@ -17,6 +18,7 @@ interface ScheduledOrderWithDetails extends ScheduledOrder {
 
 export function ScheduledOrders() {
   const [orders, setOrders] = useState<ScheduledOrderWithDetails[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<ScheduledOrderWithDetails[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -313,6 +315,15 @@ export function ScheduledOrders() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
+          <SearchBar<ScheduledOrderWithDetails>
+            items={orders}
+            placeholder="Search scheduled orders by client, driver, location or status..."
+            searchFields={['id', 'location', 'status']}
+            onSearch={setFilteredOrders}
+            className="max-w-md"
+          />
+        </div>
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -327,7 +338,7 @@ export function ScheduledOrders() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {orders.map((order) => (
+            {(filteredOrders.length > 0 ? filteredOrders : orders).map((order) => (
               <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 text-sm text-slate-900 font-mono">
                   {order.id.slice(0, 8)}...
