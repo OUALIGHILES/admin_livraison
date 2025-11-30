@@ -4,6 +4,7 @@ import { Client, Driver, Product, ScheduledOrder, ScheduledOrderItem, Location }
 import { Plus, Pencil, Trash2, Clock, Search } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { SearchBar } from '../components/SearchBar';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 interface ScheduledOrderWithDetails extends ScheduledOrder {
   client?: Client;
@@ -410,38 +411,32 @@ export function ScheduledOrders() {
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 my-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">Schedule Order</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Client</label>
-                  <select
+                  <SearchableSelect<Client>
+                    items={clients}
                     value={formData.client_id}
-                    onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select Client</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.full_name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, client_id: value })}
+                    placeholder="Select Client"
+                    displayField="full_name"
+                    valueField="id"
+                    filterFields={['full_name', 'phone_number', 'location']}
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Driver</label>
-                  <select
+                  <SearchableSelect<Driver>
+                    items={drivers.filter(d => d.status === 'available')}
                     value={formData.driver_id}
-                    onChange={(e) => setFormData({ ...formData, driver_id: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select Driver</option>
-                    {drivers.filter(d => d.status === 'available').map((driver) => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.full_name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, driver_id: value })}
+                    placeholder="Select Driver"
+                    displayField="full_name"
+                    valueField="id"
+                    filterFields={['full_name', 'phone_number', 'location', 'car_type']}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -494,19 +489,16 @@ export function ScheduledOrders() {
                     const product = products.find(p => p.id === item.product_id);
                     return (
                       <div key={index} className="flex gap-2 items-center">
-                        <select
+                        <SearchableSelect<Product>
+                          items={products}
                           value={item.product_id}
-                          onChange={(e) => updateProduct(index, 'product_id', e.target.value)}
-                          required
-                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="">Select Product</option>
-                          {products.map((product) => (
-                            <option key={product.id} value={product.id}>
-                              {product.name} (${product.admin_price})
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => updateProduct(index, 'product_id', value)}
+                          placeholder="Select Product"
+                          displayField="name"
+                          valueField="id"
+                          filterFields={['name']}
+                          className="flex-1"
+                        />
                         <input
                           type="number"
                           min="1"

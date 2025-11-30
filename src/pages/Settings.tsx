@@ -43,15 +43,31 @@ export function Settings() {
     e.preventDefault();
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      console.log('Starting admin creation process...');
+      console.log('Service client ready:', !!supabaseService.auth.admin);
+
+      // Check if service client has admin privileges
+      if (!supabaseService.auth.admin) {
+        alert('Service role is not properly configured. Please make sure SUPABASE_SERVICE_ROLE_KEY is set in your environment.');
+        return;
+      }
+
+      // Try to create user with email confirmation via service role
+      const { data: authData, error: authError } = await supabaseService.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
+        email_confirm: true, // Automatically confirm the email
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw authError;
+      }
+
+      console.log('User created successfully:', authData);
 
       if (authData.user) {
-        // Use service role client for admins table to bypass RLS recursion
+        // Create the admin profile record
         const { error: profileError } = await supabaseService.from('admins').insert({
           id: authData.user.id,
           email: formData.email,
@@ -59,15 +75,51 @@ export function Settings() {
           role: formData.role,
         });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          // If profile creation fails, delete the auth user to clean up
+          await supabaseService.auth.admin.deleteUser(authData.user.id);
+          throw profileError;
+        }
+
+        // Verify the admin profile was created successfully
+        const { data: verifyData, error: verifyError } = await supabaseService
+          .from('admins')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (verifyError || !verifyData) {
+          console.error('Verification error:', verifyError);
+          // Clean up by deleting the auth user since profile creation failed
+          await supabaseService.auth.admin.deleteUser(authData.user.id);
+          throw new Error('Admin profile creation verification failed');
+        }
+
+        console.log('Admin profile created and verified:', verifyData);
       }
 
       setShowModal(false);
       setFormData({ email: '', password: '', full_name: '', role: 'sub_admin' });
       loadAdmins();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating admin:', error);
-      alert('Error creating admin. Please try again.');
+      // More specific error handling
+      let errorMessage = 'Please try again.';
+      if (error.code) {
+        if (error.code === 'not_admin') {
+          errorMessage = 'Service role key is not properly configured. Please ensure SUPABASE_SERVICE_ROLE_KEY is set with a proper service role key.';
+        } else if (error.code === 'user_already_exists') {
+          errorMessage = 'A user with this email already exists.';
+        } else if (error.code === 'weak_password') {
+          errorMessage = 'Password is too weak. Please use at least 6 characters.';
+        } else {
+          errorMessage = `Error: ${error.code || error.message}`;
+        }
+      } else {
+        errorMessage = error.message || error.error_description || errorMessage;
+      }
+      alert(`Error creating admin: ${errorMessage}`);
     }
   };
 
