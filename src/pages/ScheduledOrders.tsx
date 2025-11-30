@@ -39,42 +39,79 @@ export function ScheduledOrders() {
   const loadData = async () => {
     try {
       console.log('Loading scheduled order data with service client');
+
+      // Load each resource separately to avoid join issues and handle potential empty tables gracefully
       const [ordersRes, clientsRes, driversRes, productsRes, locationsRes] = await Promise.all([
-        supabaseService.from('scheduled_orders').select('*, clients(*), drivers(*)').order('scheduled_datetime', { ascending: true }),
+        supabaseService.from('scheduled_orders').select('*').order('scheduled_datetime', { ascending: true }),
         supabaseService.from('clients').select('*'),
         supabaseService.from('drivers').select('*'),
         supabaseService.from('products').select('*'),
         supabaseService.from('locations').select('*').order('name', { ascending: true }),
       ]);
 
-      if (ordersRes.error) throw ordersRes.error;
-      if (clientsRes.error) throw clientsRes.error;
-      if (driversRes.error) throw driversRes.error;
-      if (productsRes.error) throw productsRes.error;
-      if (locationsRes.error) throw locationsRes.error;
+      // Check for table existence errors and handle them gracefully
+      if (ordersRes.error) {
+        console.error('Error loading scheduled orders:', ordersRes.error);
+        if (ordersRes.error.message.includes('does not exist')) {
+          console.warn('scheduled_orders table may not exist yet');
+        }
+      }
+      if (clientsRes.error) {
+        console.error('Error loading clients:', clientsRes.error);
+        if (clientsRes.error.message.includes('does not exist')) {
+          console.warn('clients table may not exist yet');
+        }
+      }
+      if (driversRes.error) {
+        console.error('Error loading drivers:', driversRes.error);
+        if (driversRes.error.message.includes('does not exist')) {
+          console.warn('drivers table may not exist yet');
+        }
+      }
+      if (productsRes.error) {
+        console.error('Error loading products:', productsRes.error);
+        if (productsRes.error.message.includes('does not exist')) {
+          console.warn('products table may not exist yet');
+        }
+      }
+      if (locationsRes.error) {
+        console.error('Error loading locations:', locationsRes.error);
+        if (locationsRes.error.message.includes('does not exist')) {
+          console.warn('locations table may not exist yet');
+        }
+      }
 
-      // Get scheduled order items for each order
-      const ordersWithItems = await Promise.all(
-        (ordersRes.data || []).map(async (order) => {
-          const itemsRes = await supabaseService
-            .from('scheduled_order_items')
-            .select('*, products(*)')
-            .eq('scheduled_order_id', order.id);
+      // Initialize orders with empty array in case of errors
+      let ordersWithItems: ScheduledOrderWithDetails[] = [];
+      if (ordersRes.data && ordersRes.data.length > 0) {
+        ordersWithItems = await Promise.all(
+          (ordersRes.data || []).map(async (order) => {
+            const itemsRes = await supabaseService
+              .from('scheduled_order_items')
+              .select('*, products(*)')
+              .eq('scheduled_order_id', order.id);
 
-          if (itemsRes.error) throw itemsRes.error;
+            if (itemsRes.error) {
+              console.error('Error loading scheduled order items:', itemsRes.error);
+            }
 
-          const items = itemsRes.data?.map((item: any) => ({
-            product: item.products,
-            quantity: item.quantity,
-            admin_price: item.admin_price,
-            driver_price: item.driver_price,
-          })) || [];
+            const items = itemsRes.data?.map((item: any) => ({
+              product: item.products,
+              quantity: item.quantity,
+              admin_price: item.admin_price,
+              driver_price: item.driver_price,
+            })) || [];
 
-          return { ...order, items };
-        })
-      );
+            // Add client and driver details by looking them up from the loaded data
+            const client = clientsRes.data?.find(c => c.id === order.client_id);
+            const driver = driversRes.data?.find(d => d.id === order.driver_id);
 
-      setOrders(ordersWithItems || []);
+            return { ...order, items, client, driver };
+          })
+        );
+      }
+
+      setOrders(ordersWithItems);
       setClients(clientsRes.data || []);
       setDrivers(driversRes.data || []);
       setProducts(productsRes.data || []);
@@ -130,15 +167,19 @@ export function ScheduledOrders() {
         };
       });
 
-      // Store the scheduled datetime - it will be converted to UTC automatically by Supabase
-      // The user inputs the time in their local timezone, which is adjusted properly
+      // Treat the user's input as Saudi Arabia time and convert it properly
+      // The user enters time in their local timezone (Saudi Arabia), so we parse it as such
+      const scheduledTimeInput = DateTime.fromISO(formData.scheduled_datetime, { zone: 'local' });
+      const scheduledTimeInSaudia = scheduledTimeInput.setZone('Asia/Riyadh', { keepLocalTime: true });
+
+      // Create the scheduled order with the time in UTC for proper storage
       const { data: order, error: orderError } = await supabaseService
         .from('scheduled_orders')
         .insert({
           client_id: formData.client_id,
           driver_id: formData.driver_id,
           location: formData.location,
-          scheduled_datetime: formData.scheduled_datetime,
+          scheduled_datetime: scheduledTimeInSaudia.toISO(),
           total_amount: totalAmount,
           driver_amount: driverAmount,
           status: 'scheduled',
@@ -293,9 +334,35 @@ export function ScheduledOrders() {
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">
                   {order.client?.full_name || 'N/A'}
+                  {order.client?.phone_number && (
+                    <div className="mt-1">
+                      <a
+                        href={`https://wa.me/${order.client.phone_number.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                      >
+                        <span className="text-[14px]">💬</span>
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">
                   {order.driver?.full_name || 'N/A'}
+                  {order.driver?.phone_number && (
+                    <div className="mt-1">
+                      <a
+                        href={`https://wa.me/${order.driver.phone_number.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                      >
+                        <span className="text-[14px]">💬</span>
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">
                   {formatDateTime(order.scheduled_datetime)}
@@ -485,10 +552,34 @@ export function ScheduledOrders() {
                 <div>
                   <p className="text-sm text-slate-600">Client</p>
                   <p className="font-medium text-slate-900">{viewOrder.client?.full_name}</p>
+                  <p className="text-sm text-slate-600">{viewOrder.client?.phone_number}</p>
+                  {viewOrder.client?.phone_number && (
+                    <a
+                      href={`https://wa.me/${viewOrder.client.phone_number.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700 mt-1"
+                    >
+                      <span className="text-[14px]">💬</span>
+                      WhatsApp Client
+                    </a>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Driver</p>
                   <p className="font-medium text-slate-900">{viewOrder.driver?.full_name}</p>
+                  <p className="text-sm text-slate-600">{viewOrder.driver?.phone_number}</p>
+                  {viewOrder.driver?.phone_number && (
+                    <a
+                      href={`https://wa.me/${viewOrder.driver.phone_number.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700 mt-1"
+                    >
+                      <span className="text-[14px]">💬</span>
+                      WhatsApp Driver
+                    </a>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Scheduled Time</p>

@@ -357,9 +357,35 @@ export function Orders() {
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">
                   {order.clients?.full_name || 'N/A'}
+                  {order.clients?.phone_number && (
+                    <div className="mt-1">
+                      <a
+                        href={`https://wa.me/${order.clients.phone_number.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                      >
+                        <span className="text-[14px]">💬</span>
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">
                   {order.drivers?.full_name || 'N/A'}
+                  {order.drivers?.phone_number && (
+                    <div className="mt-1">
+                      <a
+                        href={`https://wa.me/${order.drivers.phone_number.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                      >
+                        <span className="text-[14px]">💬</span>
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
                 <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>

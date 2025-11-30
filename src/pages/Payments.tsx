@@ -213,12 +213,12 @@ export function Payments() {
     try {
       console.log('Processing withdrawal');
 
-      // Update the driver payment by reducing the pending amount
-      const { error: updateError } = await supabase
+      // Update the driver payment by reducing the pending amount and increasing the paid amount
+      const { error: updateError } = await supabaseService
         .from('driver_payments')
         .update({
           pending_amount: selectedDriver.pending_amount - amount,
-          paid_amount: selectedDriver.paid_amount,
+          paid_amount: selectedDriver.paid_amount + amount,
         })
         .eq('id', selectedDriver.id);
 
