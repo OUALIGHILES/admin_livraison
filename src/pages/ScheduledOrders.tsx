@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { Client, Driver, Product, ScheduledOrder, ScheduledOrderItem, Location } from '../types/database';
-import { Plus, Pencil, Trash2, Clock, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock, Search, Download } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { SearchBar } from '../components/SearchBar';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { exportToExcel } from '../utils/csvExport';
 
 interface ScheduledOrderWithDetails extends ScheduledOrder {
   client?: Client;
@@ -27,11 +28,14 @@ export function ScheduledOrders() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [viewOrder, setViewOrder] = useState<ScheduledOrderWithDetails | null>(null);
+  const [editingNoteOrder, setEditingNoteOrder] = useState<ScheduledOrderWithDetails | null>(null);
+  const [noteValue, setNoteValue] = useState('');
   const [formData, setFormData] = useState({
     client_id: '',
     driver_id: '',
     location: '',
     scheduled_datetime: new Date().toISOString().slice(0, 16), // Current time + 1 hour default
+    note: '',
     products: [] as Array<{ product_id: string; quantity: number }>,
   });
 
@@ -186,6 +190,7 @@ export function ScheduledOrders() {
           total_amount: totalAmount,
           driver_amount: driverAmount,
           status: 'scheduled',
+          note: formData.note || null,
         })
         .select()
         .single();
@@ -233,6 +238,30 @@ export function ScheduledOrders() {
     }
   };
 
+  const handleEditNote = (order: ScheduledOrderWithDetails) => {
+    setEditingNoteOrder(order);
+    setNoteValue(order.note || '');
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteOrder) return;
+
+    try {
+      const { error } = await supabaseService
+        .from('scheduled_orders')
+        .update({ note: noteValue || null })
+        .eq('id', editingNoteOrder.id);
+
+      if (error) throw error;
+      setEditingNoteOrder(null);
+      setNoteValue('');
+      loadData();
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('Erreur lors de la mise à jour de la note. Veuillez réessayer.');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this scheduled order?')) return;
 
@@ -251,6 +280,7 @@ export function ScheduledOrders() {
       driver_id: '',
       location: '',
       scheduled_datetime: new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16), // Current time + 1 hour default
+      note: '',
       products: [],
     });
   };
@@ -298,6 +328,23 @@ export function ScheduledOrders() {
     }
   };
 
+  const exportScheduledOrdersToExcel = () => {
+    const excelData = orders.map(order => ({
+      'Order ID': order.id,
+      'Client Name': order.client?.full_name || 'N/A',
+      'Driver Name': order.driver?.full_name || 'N/A',
+      'Location': order.location,
+      'Scheduled Time': formatDateTime(order.scheduled_datetime),
+      'Total Amount': `SAR ${order.total_amount.toFixed(2)}`,
+      'Driver Amount': `SAR ${order.driver_amount.toFixed(2)}`,
+      'Status': order.status,
+      'Created At': order.created_at,
+      'Note': order.note || ''
+    }));
+
+    exportToExcel(excelData, 'scheduled-orders-list.xlsx', 'Scheduled Orders');
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Loading...</div>;
   }
@@ -306,13 +353,22 @@ export function ScheduledOrders() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-900">Scheduled Orders</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus size={20} />
-          Schedule Order
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={exportScheduledOrdersToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Download size={20} />
+            Download Excel
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20} />
+            Schedule Order
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -334,6 +390,7 @@ export function ScheduledOrders() {
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Scheduled Time</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Location</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Amount</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Note</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Status</th>
               <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">Actions</th>
             </tr>
@@ -381,7 +438,28 @@ export function ScheduledOrders() {
                     {formatDateTime(order.scheduled_datetime)}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
-                  <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">SAR {order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
+                    {order.note ? (
+                      <div className="flex items-center gap-2">
+                        <span className="truncate" title={order.note}>{order.note}</span>
+                        <button
+                          onClick={() => handleEditNote(order)}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="Modifier la note"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleEditNote(order)}
+                        className="text-slate-400 hover:text-blue-600 text-sm"
+                      >
+                        Ajouter une note
+                      </button>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -405,13 +483,13 @@ export function ScheduledOrders() {
               ))
             ) : filteredOrders.length === 0 && orders.length > 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                   Not found
                 </td>
               </tr>
             ) : (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                   No scheduled orders found
                 </td>
               </tr>
@@ -488,6 +566,19 @@ export function ScheduledOrders() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Note (optionnel)
+                </label>
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  placeholder="Ajouter une note pour cette commande programmée..."
+                  rows={3}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium text-slate-700">Products</label>
                   <button
@@ -522,7 +613,7 @@ export function ScheduledOrders() {
                           className="w-20 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <span className="text-sm text-slate-600">
-                          ${(product ? product.admin_price * item.quantity : 0).toFixed(2)}
+                          SAR {(product ? product.admin_price * item.quantity : 0).toFixed(2)}
                         </span>
                         <button
                           type="button"
@@ -614,6 +705,15 @@ export function ScheduledOrders() {
                 </div>
               </div>
 
+              {viewOrder.note && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-2">Note</p>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-slate-900">{viewOrder.note}</p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-slate-600 mb-2">Products</p>
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -632,10 +732,10 @@ export function ScheduledOrders() {
                           <td className="px-4 py-2 text-sm text-slate-900">{item.product.name}</td>
                           <td className="px-4 py-2 text-sm text-slate-900 text-center">{item.quantity}</td>
                           <td className="px-4 py-2 text-sm text-slate-900 text-right">
-                            ${item.admin_price.toFixed(2)}
+                            SAR {item.admin_price.toFixed(2)}
                           </td>
                           <td className="px-4 py-2 text-sm text-slate-900 text-right">
-                            ${item.driver_price.toFixed(2)}
+                            SAR {item.driver_price.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -647,11 +747,11 @@ export function ScheduledOrders() {
               <div className="flex justify-between items-center pt-4 border-t border-slate-200">
                 <div>
                   <p className="text-sm text-slate-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-slate-900">${viewOrder.total_amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-slate-900">SAR {viewOrder.total_amount.toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Driver Amount</p>
-                  <p className="text-2xl font-bold text-blue-600">${viewOrder.driver_amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-600">SAR {viewOrder.driver_amount.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -661,6 +761,47 @@ export function ScheduledOrders() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingNoteOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Modifier la note</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Note
+                </label>
+                <textarea
+                  value={noteValue}
+                  onChange={(e) => setNoteValue(e.target.value)}
+                  placeholder="Ajouter une note pour cette commande programmée..."
+                  rows={4}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNoteOrder(null);
+                    setNoteValue('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Enregistrer
+                </button>
+              </div>
             </div>
           </div>
         </div>

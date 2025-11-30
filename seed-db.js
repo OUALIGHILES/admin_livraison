@@ -151,16 +151,16 @@ async function createAdminRecord(userId, email, fullName, role) {
 
 async function addMockupProducts() {
   const products = [
-    { name: 'Pizza Margherita', admin_price: 12.99 },
-    { name: 'Burger Classique', admin_price: 10.99 },
-    { name: 'Salade César', admin_price: 8.99 },
-    { name: 'Sushi Assorti', admin_price: 18.99 },
-    { name: 'Poulet Grillé', admin_price: 14.99 },
-    { name: 'Tacos Mexican', admin_price: 9.99 },
-    { name: 'Pasta Carbonara', admin_price: 13.99 },
-    { name: 'Salmon Grillé', admin_price: 19.99 },
-    { name: 'Salade Niçoise', admin_price: 11.99 },
-    { name: 'Risotto aux Champignons', admin_price: 16.99 },
+    { name: 'Pizza Margherita', admin_price: 48.71 },
+    { name: 'Burger Classique', admin_price: 41.22 },
+    { name: 'Salade César', admin_price: 33.71 },
+    { name: 'Sushi Assorti', admin_price: 71.21 },
+    { name: 'Poulet Grillé', admin_price: 56.21 },
+    { name: 'Tacos Mexican', admin_price: 37.46 },
+    { name: 'Pasta Carbonara', admin_price: 52.46 },
+    { name: 'Salmon Grillé', admin_price: 74.96 },
+    { name: 'Salade Niçoise', admin_price: 44.96 },
+    { name: 'Risotto aux Champignons', admin_price: 63.71 },
   ];
 
   const { data, error } = await supabase

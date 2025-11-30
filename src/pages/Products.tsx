@@ -227,9 +227,9 @@ export function Products() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-900">{product.name}</td>
-                  <td className="px-6 py-4 text-sm text-slate-900">${product.admin_price.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">SAR {product.admin_price.toFixed(2)}</td>
                   <td className="px-6 py-4 text-sm text-slate-900">
-                    {product.profit_amount ? `$${product.profit_amount.toFixed(2)}` : '-'}
+                    {product.profit_amount ? `SAR ${product.profit_amount.toFixed(2)}` : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {new Date(product.created_at).toLocaleDateString()}
@@ -289,7 +289,7 @@ export function Products() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Admin Price ($)
+                  Admin Price (SAR)
                 </label>
                 <input
                   type="number"
@@ -303,7 +303,7 @@ export function Products() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Amount of the Profit ($)
+                  Amount of the Profit (SAR)
                 </label>
                 <input
                   type="number"

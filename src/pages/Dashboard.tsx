@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
-import { Package, Users, Car, ShoppingCart, DollarSign, TrendingUp, Search } from 'lucide-react';
+import { Package, Users, Car, ShoppingCart, Coins, TrendingUp, Search } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 
 interface Stats {
@@ -171,15 +171,15 @@ export function Dashboard() {
                 <TrendingUp size={24} />
                 <span className="text-sm opacity-90">Total Revenue</span>
               </div>
-              <p className="text-4xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
+              <p className="text-4xl font-bold">SAR {stats.totalRevenue.toFixed(2)}</p>
               <p className="text-xs opacity-75 mt-1">From completed orders</p>
             </div>
             <div className="p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg text-white">
               <div className="flex items-center gap-3 mb-2">
-                <DollarSign size={24} />
+                <Coins size={24} />
                 <span className="text-sm opacity-90">Pending Payments</span>
               </div>
-              <p className="text-4xl font-bold">${stats.pendingPayments.toFixed(2)}</p>
+              <p className="text-4xl font-bold">SAR {stats.pendingPayments.toFixed(2)}</p>
               <p className="text-xs opacity-75 mt-1">To be paid to drivers</p>
             </div>
           </div>

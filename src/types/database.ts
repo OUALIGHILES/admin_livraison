@@ -55,6 +55,7 @@ export interface Order {
   status: 'new' | 'in_progress' | 'completed' | 'cancelled';
   total_amount: number;
   driver_amount: number;
+  note?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +116,7 @@ export interface ScheduledOrder {
   status: 'scheduled' | 'active' | 'new' | 'in_progress' | 'completed' | 'cancelled';
   scheduled_datetime: string;
   actual_order_ref?: string | null;
+  note?: string | null;
   created_at: string;
   updated_at: string;
   items?: ScheduledOrderItem[];

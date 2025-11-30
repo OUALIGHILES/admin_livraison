@@ -40,19 +40,19 @@ SELECT * FROM create_first_admin('admin@example.com', 'System Administrator', 's
 
 -- Insert sample products if they don't exist
 INSERT INTO products (name, admin_price)
-SELECT 'Pizza Margherita', 12.99
+SELECT 'Pizza Margherita', 48.71
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Pizza Margherita');
 INSERT INTO products (name, admin_price)
-SELECT 'Burger Classique', 10.99
+SELECT 'Burger Classique', 41.22
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Burger Classique');
 INSERT INTO products (name, admin_price)
-SELECT 'Salade César', 8.99
+SELECT 'Salade César', 33.71
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Salade César');
 INSERT INTO products (name, admin_price)
-SELECT 'Sushi Assorti', 18.99
+SELECT 'Sushi Assorti', 71.21
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Sushi Assorti');
 INSERT INTO products (name, admin_price)
-SELECT 'Poulet Grillé', 14.99
+SELECT 'Poulet Grillé', 56.21
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Poulet Grillé');
 
 -- Insert sample drivers if they don't exist
@@ -117,140 +117,140 @@ LIMIT 10;
 
 -- Insert sample order items (simplified approach to avoid complex queries) if they don't exist
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 0), (SELECT id FROM products LIMIT 1 OFFSET 0), 2, 12.99, 3.90)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 0), (SELECT id FROM products LIMIT 1 OFFSET 0), 2, 48.71, 14.61)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 0)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 0)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 0), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 10.99, 3.30)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 0), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 41.22, 12.37)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 0)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 1)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 1), (SELECT id FROM products LIMIT 1 OFFSET 2), 1, 8.99, 2.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 1), (SELECT id FROM products LIMIT 1 OFFSET 2), 1, 33.71, 10.11)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 1)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 2)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 2), (SELECT id FROM products LIMIT 1 OFFSET 3), 2, 18.99, 5.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 2), (SELECT id FROM products LIMIT 1 OFFSET 3), 2, 71.21, 21.36)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 2)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 3)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 3), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 14.99, 4.50)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 3), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 56.21, 16.86)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 3)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 4)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 4), (SELECT id FROM products LIMIT 1 OFFSET 0), 3, 12.99, 3.90)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 4), (SELECT id FROM products LIMIT 1 OFFSET 0), 3, 48.71, 14.61)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 4)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 0)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 5), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 10.99, 3.30)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 5), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 41.22, 12.37)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 5)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 1)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 6), (SELECT id FROM products LIMIT 1 OFFSET 2), 2, 8.99, 2.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 6), (SELECT id FROM products LIMIT 1 OFFSET 2), 2, 33.71, 10.11)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 6)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 2)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 7), (SELECT id FROM products LIMIT 1 OFFSET 3), 1, 18.99, 5.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 7), (SELECT id FROM products LIMIT 1 OFFSET 3), 1, 71.21, 21.36)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 7)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 3)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 8), (SELECT id FROM products LIMIT 1 OFFSET 4), 2, 14.99, 4.50)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 8), (SELECT id FROM products LIMIT 1 OFFSET 4), 2, 56.21, 16.86)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 8)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 4)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 1), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 10.99, 3.30)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 1), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 41.22, 12.37)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 1)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 1)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 2), (SELECT id FROM products LIMIT 1 OFFSET 0), 1, 12.99, 3.90)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 2), (SELECT id FROM products LIMIT 1 OFFSET 0), 1, 48.71, 14.61)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 2)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 0)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 3), (SELECT id FROM products LIMIT 1 OFFSET 1), 2, 10.99, 3.30)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 3), (SELECT id FROM products LIMIT 1 OFFSET 1), 2, 41.22, 12.37)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 3)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 1)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 4), (SELECT id FROM products LIMIT 1 OFFSET 3), 1, 18.99, 5.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 4), (SELECT id FROM products LIMIT 1 OFFSET 3), 1, 71.21, 21.36)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 4)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 3)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 5), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 14.99, 4.50)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 5), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 56.21, 16.86)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 5)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 4)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 6), (SELECT id FROM products LIMIT 1 OFFSET 0), 2, 12.99, 3.90)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 6), (SELECT id FROM products LIMIT 1 OFFSET 0), 2, 48.71, 14.61)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 6)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 0)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 7), (SELECT id FROM products LIMIT 1 OFFSET 2), 1, 8.99, 2.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 7), (SELECT id FROM products LIMIT 1 OFFSET 2), 1, 33.71, 10.11)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 7)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 2)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 8), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 10.99, 3.30)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 8), (SELECT id FROM products LIMIT 1 OFFSET 1), 1, 41.22, 12.37)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 8)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 1)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 9), (SELECT id FROM products LIMIT 1 OFFSET 3), 3, 18.99, 5.70)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 9), (SELECT id FROM products LIMIT 1 OFFSET 3), 3, 71.21, 21.36)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 9)
     AND product_id = (SELECT id FROM products LIMIT 1 OFFSET 3)
 );
 INSERT INTO order_items (order_id, product_id, quantity, admin_price, driver_price)
-SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 9), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 14.99, 4.50)
+SELECT ((SELECT id FROM orders LIMIT 1 OFFSET 9), (SELECT id FROM products LIMIT 1 OFFSET 4), 1, 56.21, 16.86)
 WHERE NOT EXISTS (
     SELECT 1 FROM order_items
     WHERE order_id = (SELECT id FROM orders LIMIT 1 OFFSET 9)

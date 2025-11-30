@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { Order, Client, Driver, Product, DriverProductPrice, Location, ScheduledOrder } from '../types/database';
-import { Plus, Eye, Search } from 'lucide-react';
+import { Plus, Eye, Search, Pencil, Download } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { exportToExcel } from '../utils/csvExport';
 
 interface OrderWithDetails extends Order {
   client?: Client;
@@ -25,10 +26,13 @@ export function Orders() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [viewOrder, setViewOrder] = useState<OrderWithDetails | null>(null);
+  const [editingNoteOrder, setEditingNoteOrder] = useState<OrderWithDetails | null>(null);
+  const [noteValue, setNoteValue] = useState('');
   const [formData, setFormData] = useState({
     client_id: '',
     driver_id: '',
     location: '',
+    note: '',
     products: [] as Array<{ product_id: string; quantity: number }>,
   });
 
@@ -60,6 +64,7 @@ export function Orders() {
               total_amount: scheduledOrder.total_amount,
               driver_amount: scheduledOrder.driver_amount,
               status: 'new',
+              note: scheduledOrder.note || null,
             })
             .select()
             .single();
@@ -188,6 +193,7 @@ export function Orders() {
           total_amount: totalAmount,
           driver_amount: driverAmount,
           status: 'new',
+          note: formData.note || null,
         })
         .select()
         .single();
@@ -252,6 +258,7 @@ export function Orders() {
       client_id: '',
       driver_id: '',
       location: '',
+      note: '',
       products: [],
     });
   };
@@ -279,6 +286,30 @@ export function Orders() {
       const product = products.find(p => p.id === item.product_id);
       return total + (product ? product.admin_price * item.quantity : 0);
     }, 0);
+  };
+
+  const handleEditNote = (order: OrderWithDetails) => {
+    setEditingNoteOrder(order);
+    setNoteValue(order.note || '');
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteOrder) return;
+
+    try {
+      const { error } = await supabaseService
+        .from('orders')
+        .update({ note: noteValue || null })
+        .eq('id', editingNoteOrder.id);
+
+      if (error) throw error;
+      setEditingNoteOrder(null);
+      setNoteValue('');
+      loadData();
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('Erreur lors de la mise à jour de la note. Veuillez réessayer.');
+    }
   };
 
   const handleDelete = async (orderId: string) => {
@@ -322,6 +353,22 @@ export function Orders() {
     }
   };
 
+  const exportOrdersToExcel = () => {
+    const excelData = orders.map(order => ({
+      'Order ID': order.id,
+      'Client Name': order.clients?.full_name || 'N/A',
+      'Driver Name': order.drivers?.full_name || 'N/A',
+      'Location': order.location,
+      'Total Amount': `SAR ${order.total_amount.toFixed(2)}`,
+      'Driver Amount': `SAR ${order.driver_amount.toFixed(2)}`,
+      'Status': order.status,
+      'Created At': order.created_at,
+      'Note': order.note || ''
+    }));
+
+    exportToExcel(excelData, 'orders-list.xlsx', 'Orders');
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Loading...</div>;
   }
@@ -330,13 +377,22 @@ export function Orders() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-900">Orders</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus size={20} />
-          New Order
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={exportOrdersToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Download size={20} />
+            Download Excel
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20} />
+            New Order
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -357,6 +413,7 @@ export function Orders() {
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Driver</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Location</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Amount</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Note</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Status</th>
               <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">Actions</th>
             </tr>
@@ -401,7 +458,28 @@ export function Orders() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-900">{order.location}</td>
-                  <td className="px-6 py-4 text-sm text-slate-900">${order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-900">SAR {order.total_amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
+                    {order.note ? (
+                      <div className="flex items-center gap-2">
+                        <span className="truncate" title={order.note}>{order.note}</span>
+                        <button
+                          onClick={() => handleEditNote(order)}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="Modifier la note"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleEditNote(order)}
+                        className="text-slate-400 hover:text-blue-600 text-sm"
+                      >
+                        Ajouter une note
+                      </button>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <select
                       value={order.status}
@@ -436,13 +514,13 @@ export function Orders() {
               ))
             ) : filteredOrders.length === 0 && orders.length > 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   Not found
                 </td>
               </tr>
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   No orders found
                 </td>
               </tr>
@@ -505,6 +583,19 @@ export function Orders() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Note (optionnel)
+                </label>
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  placeholder="Ajouter une note pour cette commande..."
+                  rows={3}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium text-slate-700">Products</label>
                   <button
@@ -539,7 +630,7 @@ export function Orders() {
                           className="w-20 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <span className="text-sm text-slate-600">
-                          ${(product ? product.admin_price * item.quantity : 0).toFixed(2)}
+                          SAR {(product ? product.admin_price * item.quantity : 0).toFixed(2)}
                         </span>
                         <button
                           type="button"
@@ -558,7 +649,7 @@ export function Orders() {
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-slate-700">Order Total:</span>
                     <span className="text-lg font-bold text-slate-900">
-                      ${calculateOrderTotal().toFixed(2)}
+                      SAR {calculateOrderTotal().toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -633,6 +724,15 @@ export function Orders() {
                 </div>
               </div>
 
+              {viewOrder.note && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-2">Note</p>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-slate-900">{viewOrder.note}</p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-slate-600 mb-2">Products</p>
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -650,7 +750,7 @@ export function Orders() {
                           <td className="px-4 py-2 text-sm text-slate-900">{item.product.name}</td>
                           <td className="px-4 py-2 text-sm text-slate-900 text-center">{item.quantity}</td>
                           <td className="px-4 py-2 text-sm text-slate-900 text-right">
-                            ${item.driver_price.toFixed(2)}
+                            SAR {item.driver_price.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -662,11 +762,11 @@ export function Orders() {
               <div className="flex justify-between items-center pt-4 border-t border-slate-200">
                 <div>
                   <p className="text-sm text-slate-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-slate-900">${viewOrder.total_amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-slate-900">SAR {viewOrder.total_amount.toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Driver Amount</p>
-                  <p className="text-2xl font-bold text-blue-600">${viewOrder.driver_amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-600">SAR {viewOrder.driver_amount.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -676,6 +776,47 @@ export function Orders() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingNoteOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Modifier la note</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Note
+                </label>
+                <textarea
+                  value={noteValue}
+                  onChange={(e) => setNoteValue(e.target.value)}
+                  placeholder="Ajouter une note pour cette commande..."
+                  rows={4}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNoteOrder(null);
+                    setNoteValue('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Enregistrer
+                </button>
+              </div>
             </div>
           </div>
         </div>

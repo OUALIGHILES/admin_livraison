@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase, supabaseService } from '../lib/supabase';
 import { uploadImageToStorage } from '../lib/storage';
 import { Client, Location } from '../types/database';
-import { Plus, Pencil, Trash2, Home, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Home, Search, Download } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
+import { exportToExcel } from '../utils/csvExport';
 
 export function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -127,6 +128,18 @@ export function Clients() {
     setShowModal(true);
   };
 
+  const exportClientsToExcel = () => {
+    const excelData = clients.map(client => ({
+      'ID': client.id,
+      'Full Name': client.full_name,
+      'Location': client.location,
+      'Phone Number': client.phone_number,
+      'Created At': client.created_at
+    }));
+
+    exportToExcel(excelData, 'clients-list.xlsx', 'Clients');
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Loading...</div>;
   }
@@ -135,13 +148,22 @@ export function Clients() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-900">Clients</h1>
-        <button
-          onClick={openNewModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus size={20} />
-          Add Client
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={exportClientsToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Download size={20} />
+            Download Excel
+          </button>
+          <button
+            onClick={openNewModal}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20} />
+            Add Client
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -154,62 +176,90 @@ export function Clients() {
             className="max-w-md"
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-          {filteredClients.length > 0 ? (
-            filteredClients.map((client) => (
-              <div key={client.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div className="h-48 bg-slate-100 flex items-center justify-center">
-                  {client.house_image_url ? (
-                    <img
-                      src={client.house_image_url}
-                      alt="House"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Home size={64} className="text-slate-400" />
-                  )}
-                </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{client.full_name}</h3>
-                  <p className="text-sm text-slate-600 mb-1">{client.location}</p>
-                  <p className="text-sm text-slate-600 mb-4">{client.phone_number}</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(client)}
-                      className="flex-1 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <Pencil size={16} />
-                      Edit
-                    </button>
-                    <a
-                      href={`https://wa.me/${client.phone_number.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <span className="text-[16px]">💬</span>
-                      WhatsApp
-                    </a>
-                    <button
-                      onClick={() => handleDelete(client.id)}
-                      className="flex-1 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : filteredClients.length === 0 && clients.length > 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-slate-500 text-lg">Not found</p>
-            </div>
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-slate-500 text-lg">No clients found</p>
-            </div>
-          )}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Photo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nom complet</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Localisation</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {filteredClients.length > 0 ? (
+                filteredClients.map((client) => (
+                  <tr key={client.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-16 w-16 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+                        {client.house_image_url ? (
+                          <img
+                            src={client.house_image_url}
+                            alt="House"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Home size={32} className="text-slate-400" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900">{client.full_name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-600">{client.location}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-600">{client.phone_number}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(client)}
+                          className="text-blue-600 hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                          title="Modifier"
+                        >
+                          <Pencil size={16} />
+                          <span className="hidden sm:inline">Modifier</span>
+                        </button>
+                        <a
+                          href={`https://wa.me/${client.phone_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-900 hover:bg-green-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <span className="text-[16px]">💬</span>
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </a>
+                        <button
+                          onClick={() => handleDelete(client.id)}
+                          className="text-red-600 hover:text-red-900 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={16} />
+                          <span className="hidden sm:inline">Supprimer</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : filteredClients.length === 0 && clients.length > 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <p className="text-slate-500 text-lg">Aucun résultat trouvé</p>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <p className="text-slate-500 text-lg">Aucun client trouvé</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

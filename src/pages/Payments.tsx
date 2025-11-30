@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Driver, DriverPayment, PaymentTransaction, DriverWithdrawal } from '../types/database';
-import { DollarSign, Printer, Minus, Plus, Search } from 'lucide-react';
+import { Coins, Printer, Minus, Plus, Search, Download } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
+import { exportToExcel } from '../utils/csvExport';
 
 interface PaymentWithDriver extends DriverPayment {
   driver?: Driver;
@@ -324,7 +325,7 @@ export function Payments() {
                 <div><strong>Driver Phone:</strong> ${transaction.driver?.phone_number || 'N/A'}</div>
               </div>
 
-              <div class="amount">$${transaction.amount !== null ? transaction.amount.toFixed(2) : '0.00'}</div>
+              <div class="amount">SAR ${transaction.amount !== null ? transaction.amount.toFixed(2) : '0.00'}</div>
 
               <div class="info">
                 <div><strong>Notes:</strong> ${transaction.notes || '-'}</div>
@@ -378,7 +379,7 @@ export function Payments() {
                 <div><strong>Driver Phone:</strong> ${withdrawal.driver?.phone_number || 'N/A'}</div>
               </div>
 
-              <div class="amount">-$${withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}</div>
+              <div class="amount">-SAR ${withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}</div>
 
               <div class="info">
                 <div><strong>Notes:</strong> ${withdrawal.notes || '-'}</div>
@@ -435,12 +436,12 @@ export function Payments() {
 
               <div class="amount pending">
                 <div><strong>Pending Amount:</strong></div>
-                <div>$${payment.pending_amount !== null ? payment.pending_amount.toFixed(2) : '0.00'}</div>
+                <div>SAR ${payment.pending_amount !== null ? payment.pending_amount.toFixed(2) : '0.00'}</div>
               </div>
 
               <div class="amount paid">
                 <div><strong>Paid Amount:</strong></div>
-                <div>$${payment.paid_amount !== null ? payment.paid_amount.toFixed(2) : '0.00'}</div>
+                <div>SAR ${payment.paid_amount !== null ? payment.paid_amount.toFixed(2) : '0.00'}</div>
               </div>
 
               <div class="info">
@@ -462,6 +463,32 @@ export function Payments() {
       printWindow.print();
       printWindow.close();
     }
+  };
+
+  const exportPaymentsToExcel = () => {
+    const excelData = transactions.map(transaction => ({
+      'Transaction ID': transaction.id,
+      'Date': new Date(transaction.payment_date).toLocaleString(),
+      'Driver Name': transaction.driver?.full_name || 'N/A',
+      'Driver Phone': transaction.driver?.phone_number || 'N/A',
+      'Amount': `SAR ${transaction.amount !== null ? transaction.amount.toFixed(2) : '0.00'}`,
+      'Notes': transaction.notes || 'N/A'
+    }));
+
+    exportToExcel(excelData, 'payments-history.xlsx', 'Payment History');
+  };
+
+  const exportWithdrawalsToExcel = () => {
+    const excelData = withdrawals.map(withdrawal => ({
+      'Withdrawal ID': withdrawal.id,
+      'Date': new Date(withdrawal.withdrawal_date).toLocaleString(),
+      'Driver Name': withdrawal.driver?.full_name || 'N/A',
+      'Driver Phone': withdrawal.driver?.phone_number || 'N/A',
+      'Amount': `-SAR ${withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}`,
+      'Notes': withdrawal.notes || 'N/A'
+    }));
+
+    exportToExcel(excelData, 'withdrawals-history.xlsx', 'Withdrawal History');
   };
 
   if (loading) {
@@ -496,13 +523,22 @@ export function Payments() {
       {/* Main Content */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-900">Payment Management</h1>
-        <button
-          onClick={printHistory}
-          className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors print:hidden"
-        >
-          <Printer size={20} />
-          Print History
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={exportPaymentsToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors print:hidden"
+          >
+            <Download size={20} />
+            Download Excel
+          </button>
+          <button
+            onClick={printHistory}
+            className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors print:hidden"
+          >
+            <Printer size={20} />
+            Print History
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -523,20 +559,20 @@ export function Payments() {
                     </h3>
                     <p className="text-sm text-slate-600">{payment.driver?.phone_number}</p>
                   </div>
-                  <DollarSign className="text-green-600" size={24} />
+                  <Coins className="text-green-600" size={24} />
                 </div>
 
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-slate-600 mb-1">Pending Amount</p>
                     <p className="text-2xl font-bold text-orange-600">
-                      ${payment.pending_amount !== null ? payment.pending_amount.toFixed(2) : '0.00'}
+                      SAR {payment.pending_amount !== null ? payment.pending_amount.toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-600 mb-1">Paid Amount</p>
                     <p className="text-2xl font-bold text-green-600">
-                      ${payment.paid_amount !== null ? payment.paid_amount.toFixed(2) : '0.00'}
+                      SAR {payment.paid_amount !== null ? payment.paid_amount.toFixed(2) : '0.00'}
                     </p>
                   </div>
                 </div>
@@ -566,7 +602,7 @@ export function Payments() {
                       onClick={() => {
                         const driverWithdrawals = withdrawals.filter(w => w.driver_id === payment.driver_id);
                         const totalWithdrawn = driverWithdrawals.reduce((sum, withdrawal) => sum + (withdrawal.amount || 0), 0);
-                        alert(`Total Withdrawal Amount: $${totalWithdrawn.toFixed(2)}`);
+                        alert(`Total Withdrawal Amount: SAR ${totalWithdrawn.toFixed(2)}`);
                       }}
                       className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-2 rounded-lg transition-colors text-xs"
                     >
@@ -660,8 +696,15 @@ export function Payments() {
             className="max-w-md"
           />
         </div>
-        <div className="px-6 py-4 border-b border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-slate-900">Withdrawal History</h2>
+          <button
+            onClick={exportWithdrawalsToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors print:hidden"
+          >
+            <Download size={16} />
+            Download Excel
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -684,7 +727,7 @@ export function Payments() {
                     {withdrawal.driver?.full_name || 'Unknown'}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-red-600">
-                    -${withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}
+                    -SAR {withdrawal.amount !== null ? withdrawal.amount.toFixed(2) : '0.00'}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {withdrawal.notes || '-'}
@@ -714,7 +757,7 @@ export function Payments() {
               <p className="text-lg font-semibold text-slate-900">{selectedDriver.driver?.full_name}</p>
               <p className="text-sm text-slate-600 mt-2">Pending Amount</p>
               <p className="text-2xl font-bold text-orange-600">
-                ${selectedDriver.pending_amount !== null ? selectedDriver.pending_amount.toFixed(2) : '0.00'}
+                SAR {selectedDriver.pending_amount !== null ? selectedDriver.pending_amount.toFixed(2) : '0.00'}
               </p>
             </div>
 

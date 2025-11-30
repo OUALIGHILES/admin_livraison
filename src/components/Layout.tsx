@@ -6,7 +6,7 @@ import {
   Car,
   Users,
   ShoppingCart,
-  DollarSign,
+  Coins,
   Settings,
   MapPin,
   LogOut,
@@ -46,7 +46,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'clients', label: 'Clients', icon: Users },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'scheduled-orders', label: 'Scheduled Orders', icon: Clock },
-    { id: 'payments', label: 'Payments', icon: DollarSign },
+    { id: 'payments', label: 'Payments', icon: Coins },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
